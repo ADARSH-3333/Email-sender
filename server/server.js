@@ -10,7 +10,8 @@ app.use(cors({
   origin: [
     'http://localhost:3000', 
     'https://your-app.vercel.app'  // Add your Vercel URL here
-  ]
+  ],
+  credentials:true
 }));
 
 app.use(express.json());
