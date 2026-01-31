@@ -4,6 +4,7 @@ import { decryptPassword } from '../utils/encryption';
 function AdminSend({ selectedEmails, messages, onPrevious }) {
   const [recipientEmail, setRecipientEmail] = useState('');
   const [sending, setSending] = useState(false);
+  const [statusMessage, setStatusMessage] = useState('');
 
   const handleSend = async () => {
     if (!recipientEmail) {
@@ -12,8 +13,26 @@ function AdminSend({ selectedEmails, messages, onPrevious }) {
     }
 
     setSending(true);
+    setStatusMessage('');
     
     try {
+      const backendURL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:5000';
+
+      // Step 1: Wake up the backend
+      setStatusMessage('⏳ Waking up server... (this may take 30-60 seconds on first request)');
+      
+      const healthCheck = await fetch(backendURL, {
+        method: 'GET',
+        signal: AbortSignal.timeout(90000) // 90 second timeout for wake-up
+      });
+
+      if (!healthCheck.ok) {
+        throw new Error('Backend server is not responding');
+      }
+
+      setStatusMessage('✅ Server is awake! Sending emails...');
+
+      // Step 2: Send emails
       const emailData = selectedEmails.map((email, index) => ({
         from: email.email,
         appPassword: decryptPassword(email.appPassword),
@@ -22,23 +41,34 @@ function AdminSend({ selectedEmails, messages, onPrevious }) {
         body: messages[index].body
       }));
 
-      const backendURL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:5000';
-
       const response = await fetch(`${backendURL}/send-emails`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ emails: emailData })
+        body: JSON.stringify({ emails: emailData }),
+        signal: AbortSignal.timeout(120000) // 120 second timeout for sending
       });
 
       if (response.ok) {
-        alert('✅ All emails sent successfully!');
-        setRecipientEmail('');
+        setStatusMessage('✅ All emails sent successfully!');
+        setTimeout(() => {
+          alert('✅ All emails sent successfully!');
+          setRecipientEmail('');
+          setStatusMessage('');
+        }, 1000);
       } else {
         const errorData = await response.json();
+        setStatusMessage('');
         alert('Failed to send emails: ' + (errorData.error || 'Unknown error'));
       }
     } catch (error) {
-      alert('Error: ' + error.message);
+      setStatusMessage('');
+      if (error.name === 'TimeoutError') {
+        alert('⏱️ Request timeout. The server is taking longer than expected. Please try again.');
+      } else if (error.message.includes('fetch')) {
+        alert('❌ Cannot connect to backend. Please check if backend is deployed correctly.');
+      } else {
+        alert('Error: ' + error.message);
+      }
     } finally {
       setSending(false);
     }
@@ -69,6 +99,13 @@ function AdminSend({ selectedEmails, messages, onPrevious }) {
             </div>
           </div>
 
+          {/* Status Message */}
+          {statusMessage && (
+            <div className="mb-6 p-4 bg-blue-50 border-l-4 border-blue-500 rounded-lg">
+              <p className="text-blue-700 font-semibold">{statusMessage}</p>
+            </div>
+          )}
+
           <div className="mb-8">
             <label className="block text-sm font-semibold text-gray-700 mb-2">
               Recipient Email Address
@@ -80,6 +117,13 @@ function AdminSend({ selectedEmails, messages, onPrevious }) {
               onChange={(e) => setRecipientEmail(e.target.value)}
               className="w-full p-4 border-2 border-claude-gray rounded-lg focus:border-claude-orange focus:outline-none transition-colors"
             />
+          </div>
+
+          {/* Info Box */}
+          <div className="mb-6 p-4 bg-yellow-50 border-l-4 border-yellow-500 rounded-lg">
+            <p className="text-sm text-yellow-800">
+              ℹ️ <strong>Note:</strong> First request may take 30-60 seconds as the server wakes up from sleep (free tier limitation).
+            </p>
           </div>
 
           {/* Navigation Buttons */}
@@ -96,7 +140,7 @@ function AdminSend({ selectedEmails, messages, onPrevious }) {
               disabled={sending}
               className="flex-1 bg-claude-orange text-white py-4 rounded-lg hover:bg-opacity-90 transition-all font-semibold shadow-lg hover:shadow-xl disabled:bg-claude-gray disabled:cursor-not-allowed"
             >
-              {sending ? '📤 Sending...' : '🚀 Send All Emails'}
+              {sending ? '📤 Sending... Please wait' : '🚀 Send All Emails'}
             </button>
           </div>
         </div>
