@@ -1,0 +1,49 @@
+# Dependencies
+node_modules/
+client/node_modules/
+server/node_modules/
+package-lock.json
+client/package-lock.json
+server/package-lock.json
+
+# Environment Variables (CRITICAL - NEVER COMMIT THESE!)
+.env
+client/.env
+server/.env
+.env.local
+.env.production
+
+# Build outputs
+dist/
+client/dist/
+build/
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+logs/
+
+# IDE/Editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Firebase
+.firebase/
+firebase-debug.log
+
+# Temporary files
+.cache/
+.temp/
+tmp/
+
+# Production
+*.tgz
+
+# Vercel
+.vercel
