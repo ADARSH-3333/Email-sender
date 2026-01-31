@@ -16,8 +16,7 @@ function AdminSend({ selectedEmails, messages, onPrevious }) {
     setStatusMessage('');
     
     try {
-      const backendURL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:5000';
-
+      
       // Step 1: Wake up the backend
       setStatusMessage('⏳ Waking up server... (this may take 30-60 seconds on first request)');
       
@@ -40,6 +39,9 @@ function AdminSend({ selectedEmails, messages, onPrevious }) {
         subject: messages[index].subject,
         body: messages[index].body
       }));
+      const backendURL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:5000';
+      const timeoutId = setTimeout(() => controller.abort(), 120000); // 120 seconds timeout
+
 
       const response = await fetch(`${backendURL}/send-emails`, {
         method: 'POST',
