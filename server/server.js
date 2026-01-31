@@ -9,7 +9,8 @@ const app = express();
 app.use(cors({
   origin: [
     'http://localhost:3000', 
-    'https://your-app.vercel.app'  // Add your Vercel URL here
+    'https://email-sender-app.vercel.app',
+    'https://email-sender-e0m2e33y8-adarshs-projects-9141b78a.vercel.app' 
   ],
   credentials:true
 }));
