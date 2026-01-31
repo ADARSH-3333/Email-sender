@@ -5,9 +5,16 @@ require('dotenv').config();
 
 const app = express();
 
-// Enable CORS for all origins (we'll restrict this later)
+// CORS - allow your frontend
 app.use(cors({
-  origin: true,
+  origin: [
+    'http://localhost:3000',
+    'http://localhost:5001', 
+    'http://localhost:5173',
+    'https://email-sender-app.vercel.app',
+    'https://email-sender-app-git-main.vercel.app',
+    /\.vercel\.app$/  // Allow all Vercel preview URLs
+  ],
   credentials: true
 }));
 
@@ -21,9 +28,9 @@ app.use((req, res, next) => {
 
 // Health check endpoint
 app.get('/', (req, res) => {
-  console.log('Health check requested');
+  console.log('✅ Health check requested');
   res.json({ 
-    status: 'Backend is running!',
+    status: 'Backend is running on Railway!',
     timestamp: new Date().toISOString(),
     env: process.env.NODE_ENV 
   });
@@ -33,7 +40,6 @@ app.get('/', (req, res) => {
 app.post('/send-emails', async (req, res) => {
   console.log('========================================');
   console.log('📧 Send emails request received');
-  console.log('Request body:', JSON.stringify(req.body, null, 2));
   
   const { emails } = req.body;
 
@@ -55,28 +61,24 @@ app.post('/send-emails', async (req, res) => {
       console.log(`To: ${emailData.to}`);
       console.log(`Subject: ${emailData.subject}`);
       console.log(`Password length: ${emailData.appPassword?.length || 0} chars`);
-      console.log(`Password preview: ${emailData.appPassword?.substring(0, 4)}...`);
 
-      // Validate email data
+      // Validate required fields
       if (!emailData.from || !emailData.to || !emailData.subject || !emailData.body || !emailData.appPassword) {
-        console.error('❌ Missing required fields');
-        throw new Error('Missing required fields in email data');
+        throw new Error('Missing required fields');
       }
 
-      console.log('🔧 Creating transporter...');
+      console.log('🔧 Creating Gmail transporter...');
       const transporter = nodemailer.createTransport({
         service: 'gmail',
         auth: {
           user: emailData.from,
           pass: emailData.appPassword
-        },
-        debug: true,
-        logger: true
+        }
       });
 
-      console.log('🔍 Verifying connection...');
+      console.log('🔍 Verifying Gmail connection...');
       await transporter.verify();
-      console.log('✅ Connection verified');
+      console.log('✅ Gmail connection verified');
 
       console.log('📤 Sending email...');
       const info = await transporter.sendMail({
@@ -86,7 +88,7 @@ app.post('/send-emails', async (req, res) => {
         text: emailData.body
       });
 
-      console.log(`✅ Email sent successfully! Message ID: ${info.messageId}`);
+      console.log(`✅ Email sent! Message ID: ${info.messageId}`);
     }
 
     console.log('\n🎉 All emails sent successfully!');
@@ -98,21 +100,19 @@ app.post('/send-emails', async (req, res) => {
     console.error('Error name:', error.name);
     console.error('Error message:', error.message);
     console.error('Error code:', error.code);
-    console.error('Full error:', error);
     console.log('========================================\n');
     
     res.status(500).json({ 
       success: false, 
       error: error.message,
-      code: error.code,
-      details: error.toString()
+      code: error.code
     });
   }
 });
 
 // 404 handler
 app.use((req, res) => {
-  console.log(`404 - Not found: ${req.method} ${req.path}`);
+  console.log(`❌ 404 - Not found: ${req.method} ${req.path}`);
   res.status(404).json({ error: 'Endpoint not found' });
 });
 
@@ -120,7 +120,7 @@ app.use((req, res) => {
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
   console.log('========================================');
-  console.log(`🚀 Server started successfully`);
+  console.log(`🚀 Server started successfully on Railway`);
   console.log(`📍 Port: ${PORT}`);
   console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
   console.log(`⏰ Time: ${new Date().toISOString()}`);
