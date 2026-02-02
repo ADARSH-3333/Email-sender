@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { decryptPassword } from '../utils/encryption';
+//import { decryptPrivateKey } from '../utils/encryption';
 
 function AdminSend({ selectedEmails, messages, onPrevious }) {
   const [recipientEmail, setRecipientEmail] = useState('');
@@ -35,7 +35,7 @@ function AdminSend({ selectedEmails, messages, onPrevious }) {
       // Step 2: Send emails
       const emailData = selectedEmails.map((email, index) => ({
         from: email.email,
-        appPassword: decryptPassword(email.appPassword),
+        refreshToken: email.refreshToken,
         to: recipientEmail,
         subject: messages[index].subject,
         body: messages[index].body
